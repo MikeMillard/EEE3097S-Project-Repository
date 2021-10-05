@@ -16,13 +16,14 @@ def myCompress (inputFile):
         compressed_data = zlib.compress(data, zlib.Z_BEST_COMPRESSION)
         
         # Display the file sizes before and after compression, for testing purposes
-        print(f"Input file size: {sys.getsizeof(data)}")
-        print(f"Compressed file size: {sys.getsizeof(compressed_data)}")
+        print("\nCompression:")
+        print(f"- Input file size: {sys.getsizeof(data)} bytes.")
+        print(f"- Compressed file size: {sys.getsizeof(compressed_data)} bytes.")
 
         fout.write(compressed_data)
     
     compress_time_taken = time.time() - compress_start
-    print("Compression: It took " + str(round(compress_time_taken, 3)) + " seconds to read in, compress, and return the data.")
+    print("- It took " + str(round(compress_time_taken, 3)) + " seconds to read in, compress, and return the data.")
 
 # Decompression method, takes the decrypted compressed file as input
 def myDecompress (compressedFile):
@@ -34,11 +35,12 @@ def myDecompress (compressedFile):
         decompressed_data = zlib.decompress(data)
         
         # Display the file sizes before and after decompression, also to be compared with file sizes displayed in the compression sub-subsystem
-        print(f"Compressed file size: {sys.getsizeof(data)}")
-        print(f"Decompressed file size: {sys.getsizeof(decompressed_data)}")
+        print("\nDecompression:")
+        print(f"- Compressed file size: {sys.getsizeof(data)} bytes.")
+        print(f"- Decompressed file size: {sys.getsizeof(decompressed_data)} bytes.")
 
         fout.write(decompressed_data)
     
     # Stop the decompression timer
     decompress_time_taken = time.time() - decompress_start
-    print("Decompression: It took " + str(round(decompress_time_taken, 3)) + " seconds to read in, decompress, and return the data.")
+    print("- It took " + str(round(decompress_time_taken, 3)) + " seconds to read in, decompress, and return the data.")

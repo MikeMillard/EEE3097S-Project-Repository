@@ -16,7 +16,7 @@ def encrypt_data(filename):
         compressed_data = compressed_file.read()
     
     # Encryption algorithm used is Salsa20 
-    cipher = Salsa20.new(key=secret_key1)
+    cipher = Salsa20.new(key=secret_key2)
     encrypted_msg = cipher.nonce + cipher.encrypt(compressed_data)
 
     # Writes the encrypted data to a .csv file
@@ -25,7 +25,8 @@ def encrypt_data(filename):
     
     # Stop the encryption timer
     encrypt_time_taken = time.time() - encrypt_start
-    print("Encryption: It took " + str(round(encrypt_time_taken, 3)) + " seconds to read in, encrypt, and return the data.")
+    print("\nEncryption:")
+    print("- It took " + str(round(encrypt_time_taken, 3)) + " seconds to read in, encrypt, and return the data.")
 
 # Decryption method, takes the data file to be decrypted as input
 def decrypt_data(filename):
@@ -38,7 +39,7 @@ def decrypt_data(filename):
     # Deciphering the data
     msg_nonce = encrypted_data[:8]
     ciphertext = encrypted_data[8:]
-    cipher = Salsa20.new(key=secret_key1, nonce=msg_nonce)
+    cipher = Salsa20.new(key=secret_key2, nonce=msg_nonce)
     decrypted_msg = cipher.decrypt(ciphertext)
 
     # Writes the decrypted data to a .csv file (this file is the output of the subsystem)
@@ -47,4 +48,5 @@ def decrypt_data(filename):
     
     # Stop the decryption timer
     decrypt_time_taken = time.time() - decrypt_start
-    print("Decryption: It took " + str(round(decrypt_time_taken, 3)) + " seconds to read in, decrypt, and return the data.")
+    print("\nDecryption:")
+    print("- It took " + str(round(decrypt_time_taken, 3)) + " seconds to read in, decrypt, and return the data.")
