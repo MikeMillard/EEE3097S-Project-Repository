@@ -13,7 +13,7 @@ start_time = time.time()
 print("\nPerforming operations on the data: Results pending...")
 
 # First, compress the raw data from the input .csv file
-input_file_path = "IMU_Data/" + input_csv_name + ".csv"
+input_file_path = "RT_IMU_Data/" + input_csv_name + ".csv"
 print("\n------------------------------------------------------------------")
 print("Compressing the data...")
 compression.myCompress(input_file_path)
