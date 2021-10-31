@@ -3,6 +3,9 @@ from Crypto.Cipher import Salsa20
 import time
 import os
 
+global current_count
+current_count = 10
+
 # Generating secret keys (two keys generated: one 16-byte, one 32-byte, for testing purposes)
 secret_key1 = os.urandom(16)
 secret_key2 = os.urandom(32)
@@ -16,11 +19,11 @@ def encrypt_data(filename):
         compressed_data = compressed_file.read()
     
     # Encryption algorithm used is Salsa20 
-    cipher = Salsa20.new(key=secret_key2)
+    cipher = Salsa20.new(key=secret_key1)
     encrypted_msg = cipher.nonce + cipher.encrypt(compressed_data)
-
+    
     # Writes the encrypted data to a .csv file
-    with open('Encrypted_Files/Encrypted_Data.csv', 'wb') as encrypted_file:
+    with open('Encrypted_Files/Encrypted_Data_' + str(current_count) + '_Mins.csv', 'wb') as encrypted_file:
         encrypted_file.write(encrypted_msg)
     
     # Stop the encryption timer
@@ -39,11 +42,11 @@ def decrypt_data(filename):
     # Deciphering the data
     msg_nonce = encrypted_data[:8]
     ciphertext = encrypted_data[8:]
-    cipher = Salsa20.new(key=secret_key2, nonce=msg_nonce)
+    cipher = Salsa20.new(key=secret_key1, nonce=msg_nonce)
     decrypted_msg = cipher.decrypt(ciphertext)
 
     # Writes the decrypted data to a .csv file (this file is the output of the subsystem)
-    with open('Decrypted_Files/Decrypted_Data.csv', 'wb') as decrypted_file:
+    with open('Decrypted_Files/Decrypted_Data_' + str(current_count) + '_Mins.csv', 'wb') as decrypted_file:
         decrypted_file.write(decrypted_msg)
     
     # Stop the decryption timer

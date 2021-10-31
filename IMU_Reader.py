@@ -4,6 +4,11 @@ import time
 import datetime
 import smbus
 import math
+import encryption
+import compression
+
+# Gloabl variable for number of data sets collected by the Pi
+global read_counter
 
 Gyro  = [0,0,0]
 Accel = [0,0,0]
@@ -396,29 +401,111 @@ class SHTC3:
         humidity.argtypes = [ctypes.c_void_p]
         return humidity(None)
 
+# File comparison method (checks for errors in each line of output file by comparing to input file)
+def file_comparison(fileName1, fileName2):
+  original_file = open(fileName1, "r")  
+  received_file = open(fileName2, "r")  
+  
+  line_error_count = 0
+  
+  for original_line in original_file:
+
+    for received_line in received_file:
+          
+      # Comparing same line numbers from each file
+      if original_line == received_line:  
+          line_error_count += 0
+      else:
+          line_error_count += 1       
+      break
+  
+  original_file.close()                                       
+  received_file.close()
+
+  return line_error_count
+
 if __name__ == '__main__':
   import time
-  print("\nSense HAT Readings Every Second ...\n")
+  print("\nBeginning to read data from IMU. Sample rate: 1 reading per second ...\n")
   MotionVal=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
   shtc3 = SHTC3()
   icm20948=ICM20948()
   overall_read = bytes("Date & Time | MagX | MagY | MagZ | AccX | AccY | AccZ | GyroX | GyroY | GyroZ | Temp | Roll | Pitch | Yaw\n", 'utf-8')
+  sample_time = 600 # seconds, increases later (for testing purposes), first reading is for 10 minutes
   start_time = time.time()
-  read_counter = 1
+  read_counter = 10 # Reads for 10 minutes, for file naming
   print("\n Date & Time | MagX | MagY | MagZ | AccX | AccY | AccZ | GyroX | GyroY | GyroZ | Temp | Roll | Pitch | Yaw\n")
 
   while True:
     # Read values every second for ten minutes before performing compression and encryption and transmitting the data collected within that time period  
-    if ((time.time() - start_time) > 600):
+    if ((time.time() - start_time) > sample_time):
         # Writes the encrypted data to a .csv file
         print("Writing Gathered Data to .csv File...")
-        with open('RT_IMU_Data/RT_IMU_Data' + str(read_counter) + '.csv', 'wb') as data_file:
+        with open('RT_IMU_Data/Data_Set_' + str(read_counter) + "_Mins" + '.csv', 'wb') as data_file:
             data_file.write(overall_read)
 
-        print("Write complete, returning to gathering data...")    
+        print("Write complete, preparing to compress and encrypt data...")
+        
+        # ON THE SENDING END:
+
+        # Start the operations timer for testing purposes
+        subsys_start_time = time.time()
+        print("\nPerforming operations on the data: Results pending...")
+
+        # First, compress the raw data from the input .csv file
+        input_file_path = "RT_IMU_Data/Data_Set_" + str(read_counter) + "_Mins.csv"
+        print("\n------------------------------------------------------------------")
+        print("Compressing the data...")
+        compression.myCompress(input_file_path)
+        print("\nCompression successful.")
+        print("------------------------------------------------------------------")
+
+        # Encrypt the compressed data file
+        print("Encrypting the data...")
+        encryption.encrypt_data('Compressed_Files/Compressed_Data_' + str(read_counter) + '_Mins.csv')
+        print("\nEncryption successful.")
+        print("------------------------------------------------------------------")
+        
+        # ON THE RECEIVING END NOW:
+
+        # Decrypt the data file
+        print("Decrypting the data...")
+        encryption.decrypt_data('Encrypted_Files/Encrypted_Data_' + str(read_counter) + '_Mins.csv')
+        print("\nDecryption successful.")
+        print("------------------------------------------------------------------")
+
+        # Decompress the decrypted data file  
+        print("Decompressing the data...")
+        compression.myDecompress('Decrypted_Files/Decrypted_Data_' + str(read_counter) + '_Mins.csv')
+        print("\nDecompression successful.")
+        print("------------------------------------------------------------------")
+
+        # Stop the timer
+        total_subsys_time = time.time() - subsys_start_time
+
+        # Do data loss check between input and output files
+        input_file = 'RT_IMU_Data/Data_Set_' + str(read_counter) + '_Mins.csv'
+        output_file = 'Decompressed_Files/Decompressed_Data_' + str(read_counter) + '_Mins.csv'
+        data_loss_count = file_comparison(input_file, output_file) # file_comparison method written above
+
+        print("Overall Results:")
+        print("- Total time taken for all operations was " + str(round(total_subsys_time, 3)) + " seconds (no transmission time accounted for).")
+        print("- Data loss detection tests found that there were " + str(data_loss_count) + " differences between the input and output files.")
+        print("\nNote: The output .csv file is contained inside the 'Decompressed_Files' folder.")
+        print("------------------------------------------------------------------")
+
+        # Reset variables and return to collecting next set of data
+        print("\nAll operations complete. The data was successfully collected, compressed, encrypted and sent. It was then received, decrypted and decompressed successfully.")
+        print("Returning to collecting data for the next " + str(read_counter + 5) + " minutes...\n")
+        print("------------------------------------------------------------------")
+        print("Date & Time | MagX | MagY | MagZ | AccX | AccY | AccZ | GyroX | GyroY | GyroZ | Temp | Roll | Pitch | Yaw\n")
+
         overall_read = bytes("Date & Time | MagX | MagY | MagZ | AccX | AccY | AccZ | GyroX | GyroY | GyroZ | Temp | Roll | Pitch | Yaw\n", 'utf-8')
+        sample_time += 300 # Increasing the sample time by 5 minutes: From 10 minutes, to 15 minutes, to 20 minutes, etc. In order to test on differently sized data sets.
         start_time = time.time()
-        read_counter += 1
+        encryption.current_count += 5
+        compression.current_count += 5
+        read_counter += 5
     
     icm20948.icm20948_Gyro_Accel_Read()
     icm20948.icm20948MagRead()
@@ -464,6 +551,6 @@ if __name__ == '__main__':
     overall_read += bytes(current_read + "\n", 'utf-8')
     print(current_read)
 
-    # Sleep for 1 second before taking next reading (sleeping for 0.41s already above)
-    time.sleep(0.59)
+    # Sleep for the remainder of 1 second before taking next reading (sleeping for 0.365s already above)
+    time.sleep(0.635)
 
